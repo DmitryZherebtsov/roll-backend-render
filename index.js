@@ -1,4 +1,3 @@
-// require('dotenv').config();
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
@@ -15,7 +14,6 @@ const bot = new Telegraf(token);
 const app = express();
 const port = 3001;
 const allowedUsers = [786187640, 1027031193];
-// const chatIds = new Set();
 
 app.use(cors());
 app.use(bodyParser.json());
@@ -30,14 +28,8 @@ const checkUserPermission = (ctx, next) => {
     }
 };
 
-// function addChatId(ctx) {
-//     const chatId = ctx.chat.id;
-//     chatIds.add(chatId);
-//     console.log(chatIds)
-// }
-
-function sendNotification() {
-    const message = 'У вас нове замовлення!';
+function sendNotification(newMessage) {
+    const message = newMessage;
     allowedUsers.forEach(chatId => {
         bot.telegram.sendMessage(chatId, message)
             .then(response => {
@@ -57,6 +49,7 @@ app.post('/api/reviews', (req, res) => {
         return res.status(400).send("Неправильний формат даних. Очікувався об'єкт.");
     }
     try {
+        sendNotification('У вас новий відгук!');
         addReviews(newReviews);
         res.status(200).send('Відгуки успішно оновлено');
         console.log('Відгуки успішно оновлено');
@@ -69,7 +62,7 @@ app.post('/api/data', async (req, res) => {
     const newOrder = req.body;
 
     try {
-        sendNotification();
+        sendNotification('У вас нове замовлення!');
         console.log(newOrder);
         addOrder(newOrder);
         res.status(200).send('Замовлення успішно оновлено');
@@ -91,7 +84,6 @@ app.listen(port, () => {
 bot.use(checkUserPermission);
 
 bot.start((ctx) => {
-    // addChatId(ctx);
     console.log(`Отримано повідомлення від chat ID: ${ctx.chat.id}`);
     sendOptionsKeyboard(ctx);
 });
@@ -99,14 +91,12 @@ bot.start((ctx) => {
 //--------------------------------Feedbacks--------------------------------//
 
 bot.hears('Відгуки', (ctx) => {
-    // addChatId(ctx);
     handleFeedbacks(ctx);
 });
 
 //--------------------------------Orders--------------------------------//
 
 bot.hears('Замовлення', (ctx) => {
-    // addChatId(ctx);
     handleOrders(ctx, allowedUsers);
     sendOptionsKeyboard(ctx);
 });
@@ -114,7 +104,6 @@ bot.hears('Замовлення', (ctx) => {
 //--------------------------------Delete from Feedbacks--------------------------------//
 
 bot.hears('Видалити відгук', (ctx) => {
-    // addChatId(ctx);
     handleFeedbackElements(ctx);
 });
 
