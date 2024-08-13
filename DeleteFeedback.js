@@ -35,6 +35,7 @@ function handleDeleteFromReviews(ctx){
             .catch(err => console.error(`Не вдалося видалити повідомлення з id ${message_id}:`, err));
     });
     confirmedReviews.splice(reviewIndex, 1);
+    message_ids = []
     console.log(confirmedReviews);
     sendOptionsKeyboard(ctx);
 }
