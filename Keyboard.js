@@ -2,8 +2,7 @@ const { Markup } = require('telegraf');
 
 function sendOptionsKeyboard(ctx) {
     ctx.reply('Виберіть опцію:', Markup.keyboard([
-        ['Замовлення'],
-        ['Відгуки', 'Видалити відгук'],
+        ['Видалити відгук'],
       ])
       .oneTime()
       .resize());
