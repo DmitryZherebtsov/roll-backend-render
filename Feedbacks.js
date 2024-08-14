@@ -1,77 +1,42 @@
 const { Markup } = require('telegraf');
-const { sendOptionsKeyboard } = require('./Keyboard');
 
-let reviews = [];
+let reviewIndexMap = new Map();
 
-let processedFeedbacks = 0;
-let reviewsLength = reviews.length;
-let confirmedReviews = [
-    { firstName: 'Іван', lastName: 'Іванов', comment: 'Дуже сподобалося!', phone: '123-456-7890', rating: 5 },
-    { firstName: 'Марія', lastName: 'Петренко', comment: 'Все було добре.', phone: '098-765-4321', rating: 4 },
-    { firstName: 'Олександр', lastName: 'Сидоренко', comment: 'Може бути краще.', phone: '234-567-8901', rating: 3 }
-];
-
-function addReviews(newReview) {
-    if (typeof newReview !== 'object' || newReview === null) {
-        throw new TypeError('newReview is not an object.');
+function generateUniqueIndex() {
+    let index;
+    do {
+        index = Math.floor(Math.random() * 1000000);
+    } while (reviewIndexMap.has(index));
+    return index;
+  }
+  function sendReview(mes, allowedUsers, bot) {
+    let review = mes;
+    let index = generateUniqueIndex();
+    reviewIndexMap.set(index, review);
+  
+    let messageText = `Ім'я: ${review.firstName}\nПрізвище: ${review.lastName}\nТелефон: ${review.phone}\nВідгук: ${review.comment}\nОцінка: ${review.rating}`;
+  
+    let keyboard = Markup.inlineKeyboard([
+      Markup.button.callback('Додати', `add_${index}`),
+      Markup.button.callback('Видалити', `reject_${index}`)
+    ]);
+  
+    try {
+      allowedUsers.forEach(chatId => {
+        bot.telegram.sendMessage(chatId, messageText, keyboard)
+          .then(response => {
+            console.log(`Повідомлення відправлено до chatId: ${chatId}`, response);
+          })
+          .catch(error => {
+            console.error(`Помилка з відправкою повідомлення до chatId: ${chatId}`, error);
+          });
+      });
+    } catch (e) {
+      console.log(e);
     }
-
-    reviews.push(newReview); // Додаємо новий відгук в масив
-    console.log('Review added:', newReview);
-    console.log('All reviews:', reviews);
-    processedFeedbacks = 0;
-    reviewsLength = reviews.length;
-}
-
-function handleFeedbacks(ctx) {
-    if (reviews.length === 0) {
-        ctx.reply('Усі відгуки опрацьовані.');
-        console.log(`confirmedReviews ${JSON.stringify(confirmedReviews, null, 2)}`);
-        console.log(`reviews ${JSON.stringify(reviews, null, 2)}`);
-        sendOptionsKeyboard(ctx);
-    } else {
-        reviews.forEach((_, index) => {
-            sendReview(ctx, index);
-        });
-    }
-}
-
-function sendReview(ctx, index) {
-    const review = reviews[index];
-    ctx.reply(`Ім'я: ${review.firstName}\nПрізвище: ${review.lastName}\nТелефон: ${review.phone}\nВідгук: ${review.comment}\nОцінка: ${review.rating}`, 
-        Markup.inlineKeyboard([
-            Markup.button.callback('Додати', `add_${index}`),
-            Markup.button.callback('Видалити', `reject_${index}`)
-        ]));
-}
-
-function allReviewsProcessed(ctx){
-    if (processedFeedbacks === reviewsLength) {
-        reviews = [];
-        ctx.reply('Усі відгуки опрацьовані.');
-        console.log(`confirmedReviews ${JSON.stringify(confirmedReviews, null, 2)}`);
-        console.log(`reviews ${JSON.stringify(reviews, null, 2)}`);
-        sendOptionsKeyboard(ctx);
-    }
-}
-
-function handleAddReview(ctx, reviewIndex) {
-    confirmedReviews.push(reviews[reviewIndex]);
-    processedFeedbacks += 1;
-    ctx.deleteMessage();
-    allReviewsProcessed(ctx);
-}
-
-function handleRejectReview(ctx) {
-    processedFeedbacks += 1;
-    ctx.deleteMessage();
-    allReviewsProcessed(ctx);
-}
+  }
 
 module.exports = {
-    handleFeedbacks,
-    handleAddReview,
-    handleRejectReview,
-    confirmedReviews,
-    addReviews
+    sendReview,
+    reviewIndexMap
 };
